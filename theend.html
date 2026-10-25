@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>...</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="end-page">
+
+    <div class="stars" aria-hidden="true"></div>
+    <div class="halo" aria-hidden="true"></div>
+    <canvas id="fx" aria-hidden="true"></canvas>
+
+    <main class="credits" id="credits">
+        <div class="line title chars center">I wanted to say some (final) words</div>
+
+        <div class="line left">I know I was awful after it all ended.</div>
+        <div class="line right">I guess I couldn't let go that easily.</div>
+        <div class="line left">I know I was stupid.</div>
+        <div class="line right">I poured all of my energy into making you hate me.</div>
+        <div class="line left">Mainly so you could forget me easily.</div>
+        <div class="line right">But in the end, it only made things worse.</div>
+        <div class="line left">So I apologize for that.</div>
+        <div class="line right">It was still fun for me, though.</div>
+        <div class="line left">I don't know if you feel the same.</div>
+        <div class="line center">But after all &mdash;</div>
+
+        <div class="line center chars final"><h1>I am sorry!</h1></div>
+    </main>
+
+    <div class="vig" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+<script>
+(() => {
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const SPEED = 44;                       // credits speed (px per second)
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const ease = v => v * v * (3 - 2 * v);
+    const rand = ([a, b]) => a + Math.random() * (b - a);
+    const T0 = performance.now();
+
+    // shared state: what the credits tell the lights
+    const S = { lit: 0, fin: 0, tx: innerWidth / 2, ty: innerHeight / 2, fcx: innerWidth / 2, fcy: innerHeight / 2, pos: 0 };
+
+    /* ---------- split lines into words (letters for title + last line) ---------- */
+    const credits = document.getElementById("credits");
+    const lines = [...document.querySelectorAll(".line")].map(el => {
+        const fin = el.classList.contains("final"), chars = el.classList.contains("chars");
+        const host = el.querySelector("h1") || el;
+        const text = host.textContent.trim(), words = text.split(/\s+/), units = [];
+        el.setAttribute("aria-label", text);
+        host.textContent = "";
+        words.forEach((w, i) => {
+            const wd = document.createElement("span");
+            wd.className = "wd"; wd.setAttribute("aria-hidden", "true");
+            if (chars) {
+                [...w].forEach(ch => {
+                    const s = document.createElement("span");
+                    s.className = "u"; s.textContent = ch; wd.appendChild(s); units.push(s);
+                });
+            } else { wd.classList.add("u"); wd.textContent = w; units.push(wd); }
+            host.appendChild(wd);
+            if (i < words.length - 1) host.appendChild(document.createTextNode(" "));
+        });
+        return { el, fin, chars, units, side: el.classList.contains("left") ? -1 : el.classList.contains("right") ? 1 : 0 };
+    });
+    const FIN = lines[lines.length - 1];
+
+    /* ---------- credits roll: auto only, paced by the text ---------- */
+    let pos = 0, last = T0;
+    function frame(now) {
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        const max = credits.offsetHeight - innerHeight, go = now - T0 - (reduce ? 500 : 3600);
+        if (go > 0) {
+            // slows while a line is being read, speeds through the gaps, eases to a stop at the end
+            const sp = SPEED * (1.15 - 0.6 * S.lit) * clamp((max - pos) / 300, 0.08, 1) * clamp(go / 3000);
+            pos = Math.min(max, pos + sp * dt);
+        }
+        S.pos = pos;
+        credits.style.transform = `translate3d(0,${-pos}px,0)`;
+        credits.style.opacity = clamp((now - T0 - (reduce ? 0 : 2200)) / 1500).toFixed(2);
+
+        const vh = innerHeight, vw = innerWidth;
+        let best = 0, bx = S.tx, by = S.ty, fin = 0;
+
+        lines.forEach(L => {
+            const r = L.el.getBoundingClientRect();
+            const c = (r.top + r.height / 2) / vh;                 // 0 = top, 1 = bottom
+            L.el.style.transform = `translate3d(${L.side * (c - 0.5) * 50}px,0,0)`;
+            if (L.fin) { S.fcx = r.left + r.width / 2; S.fcy = r.top + r.height / 2; }
+            if (c < -0.3 || c > 1.4) return;
+
+            const n = L.units.length;
+            let a = 0;
+            L.units.forEach((u, i) => {
+                const s = (i / n) * (L.chars ? 0.12 : 0.1);        // left-to-right stagger
+                const fi = ease(clamp((1.04 - c - s) / 0.3));
+                const uu = fi * (L.fin ? 1 : ease(clamp((c + s) / 0.3)));
+                let g = uu * (1 - clamp(Math.abs(c + s * 1.5 - 0.5) / 0.3));   // light sweeps across
+                if (L.fin) g = Math.max(g, fi * (0.7 + 0.3 * Math.sin(now / 900 - i * 0.5)));
+                a = Math.max(a, uu);
+                u.style.setProperty("--u", uu.toFixed(3));
+                u.style.setProperty("--g", g.toFixed(3));
+                u.style.setProperty("--y", ((1 - fi) * 16).toFixed(1));
+                const b = (1 - uu) * 6;
+                u.style.filter = b > 0.15 ? `blur(${b.toFixed(1)}px)` : "none";
+            });
+            if (L.fin) fin = a;
+            const w = a * (1 - clamp(Math.abs(c - 0.5) / 0.45));
+            if (w > best) { best = w; bx = r.left + r.width / 2; by = r.top + r.height / 2; }
+        });
+
+        const k = v => Math.min(1, dt * v);
+        S.lit += (best - S.lit) * k(3);
+        S.fin += (fin - S.fin) * k(1.5);
+        S.tx += (bx - S.tx) * k(2.5);
+        S.ty += (by - S.ty) * k(2.5);
+        const bs = document.body.style;
+        bs.setProperty("--lit", S.lit.toFixed(3));
+        bs.setProperty("--fin", S.fin.toFixed(3));
+        bs.setProperty("--lx", (S.tx - vw / 2).toFixed(0));
+        bs.setProperty("--ly", (S.ty - vh / 2).toFixed(0));
+        bs.setProperty("--br", (0.88 + 0.12 * Math.sin(now / 2300) + 0.05 * Math.sin(now / 770)).toFixed(3)); // slow, tired breathing
+        requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+    /* ---------- lights ---------- */
+    const cv = document.getElementById("fx"), g = cv.getContext("2d");
+    let W, H;
+    function resize() {
+        const dpr = Math.min(2, devicePixelRatio || 1);
+        W = innerWidth; H = innerHeight;
+        cv.width = W * dpr; cv.height = H * dpr;
+        g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+
+    const mk = (rgb, stops) => {
+        const s = document.createElement("canvas");
+        s.width = s.height = 128;
+        const x = s.getContext("2d"), r = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+        stops.forEach(([o, a]) => r.addColorStop(o, `rgba(${rgb},${a})`));
+        x.fillStyle = r; x.fillRect(0, 0, 128, 128);
+        return s;
+    };
+    const SPR = ["185,205,235", "140,165,210", "205,215,232"].map(rgb => ({
+        glow: mk(rgb, [[0, 1], [0.2, 0.5], [0.55, 0.12], [1, 0]]),
+        disc: mk(rgb, [[0, 0.1], [0.8, 0.14], [0.94, 0.6], [1, 0]])
+    }));
+
+    const LAYERS = [
+        { n: 12, r: [50, 115], a: [0.04, 0.09], par: 0.15, k: "disc", sz: 2, sp: 7 },
+        { n: 26, r: [8, 24],   a: [0.12, 0.24], par: 0.45, k: "glow", sz: 4, sp: 12 },
+        { n: 48, r: [1.2, 3.6], a: [0.35, 0.75], par: 1,    k: "glow", sz: 7, sp: 18, tw: 1 }
+    ];
+    // intro: every orb is born at the center and bursts outward
+    const orbs = LAYERS.flatMap(L => Array.from({ length: L.n }, () => ({
+        L, x: reduce ? Math.random() * W : W / 2 + (Math.random() - 0.5) * 30,
+        y: reduce ? Math.random() * H : H / 2 + (Math.random() - 0.5) * 30,
+        vx: (Math.random() - 0.5) * L.sp, vy: (Math.random() * 0.5 + 0.15) * L.sp * 0.7,
+        fx: 0, fy: 0, r: rand(L.r), a: rand(L.a),
+        p: Math.random() * 6.28, f: 0.3 + Math.random() * 0.7, s: SPR[(Math.random() * 3) | 0]
+    })));
+
+    // dust that swirls around the last line, then assembles into its letters
+    let targets = [];
+    function buildTargets() {
+        const size = parseFloat(getComputedStyle(FIN.el.querySelector("h1")).fontSize);
+        const text = FIN.el.getAttribute("aria-label"), oc = document.createElement("canvas"), x = oc.getContext("2d");
+        x.font = `${size}px Minecraft`;
+        const w = Math.ceil(x.measureText(text).width) + 20, h = Math.ceil(size * 1.4);
+        oc.width = w; oc.height = h;
+        x.font = `${size}px Minecraft`; x.fillStyle = "#fff"; x.textAlign = "center"; x.textBaseline = "middle";
+        x.fillText(text, w / 2, h / 2);
+        const d = x.getImageData(0, 0, w, h).data, step = Math.max(3, Math.round(size / 20));
+        targets = [];
+        for (let yy = 0; yy < h; yy += step) for (let xx = 0; xx < w; xx += step)
+            if (d[(yy * w + xx) * 4 + 3] > 128) targets.push([xx - w / 2, yy - h / 2]);
+        targets.sort(() => Math.random() - 0.5);
+    }
+    const build = () => { try { buildTargets(); } catch (e) {} };
+    document.fonts.load("40px Minecraft").then(build, build);
+    addEventListener("resize", () => { resize(); build(); });
+
+    const dust = Array.from({ length: 520 }, (_, i) => ({
+        i, ang: Math.random() * 6.28, rad: 120 + Math.random() * 320, w: (0.05 + Math.random() * 0.15) * (Math.random() < 0.5 ? -1 : 1),
+        r: 1.2 + Math.random() * 1.2, p: Math.random() * 6.28, s: SPR[(Math.random() * 3) | 0]
+    }));
+
+    const P = { x: 0, y: 0, on: false, nx: 0, ny: 0 };
+    addEventListener("pointermove", e => { P.x = e.clientX; P.y = e.clientY; P.on = true; });
+    document.addEventListener("pointerleave", () => { P.on = false; });
+
+    let lastT = T0, burst = false, fired = false, pulse = false, ringT = 0;
+    function drawFx(now) {
+        const real = Math.min(0.05, (now - lastT) / 1000);
+        const dt = reduce ? 0 : real;
+        lastT = now;
+        const t = now / 1000, ti = (now - T0) / 1000, pad = 130, ww = W + pad * 2, hh = H + pad * 2;
+        const fade = reduce ? 1 : clamp((ti - 0.6) / 1.2);
+
+        g.clearRect(0, 0, W, H);
+        g.globalCompositeOperation = "lighter";
+
+        // intro: a single seed of light blooms at the center
+        if (!reduce && ti < 3.4) {
+            const k = ti / 3.4, a = Math.pow(Math.sin(Math.PI * k), 1.5), sz = 80 + ease(k) * Math.max(W, H) * 1.1;
+            g.globalAlpha = a * 0.55; g.drawImage(SPR[0].glow, W / 2 - sz / 2, H / 2 - sz / 2, sz, sz);
+            g.globalAlpha = a * 0.8; g.drawImage(SPR[0].glow, W / 2 - 60, H / 2 - 60, 120, 120);
+        }
+        if (!burst && ti > 1.1 && !reduce) {
+            burst = true;
+            orbs.forEach(o => {
+                const a = Math.random() * 6.28, m = (260 + Math.random() * 520) * (0.5 + o.L.par * 0.5);
+                o.fx += Math.cos(a) * m; o.fy += Math.sin(a) * m;
+            });
+        }
+        if (!fired && S.fin > 0.55) { fired = true; pulse = true; ringT = now; }
+
+        P.nx += ((P.on ? P.x / W - 0.5 : 0) - P.nx) * Math.min(1, real * 3);
+        P.ny += ((P.on ? P.y / H - 0.5 : 0) - P.ny) * Math.min(1, real * 3);
+
+        orbs.forEach(o => {
+            const L = o.L;
+            o.x += (o.vx + Math.sin(t * o.f + o.p) * 6 * L.par) * dt + o.fx * dt;
+            o.y += o.vy * dt + o.fy * dt;
+            const damp = Math.pow(0.25, dt);
+            o.fx *= damp; o.fy *= damp;
+
+            const sx = (((o.x + pad) % ww) + ww) % ww - pad + P.nx * L.par * 40;
+            const sy = (((o.y - S.pos * L.par * 0.35 + pad) % hh) + hh) % hh - pad + P.ny * L.par * 25;
+            const dx = S.tx - sx, dy = S.ty - sy, d = Math.hypot(dx, dy) || 1;
+
+            if (L.par > 0.3) {
+                // gather in a ring around the active line; swirl around the finale
+                const pull = (S.lit * 0.7 + S.fin * 1.6) * 110 * Math.exp(-d / 420) * (d > 170 ? 1 : -1.6);
+                o.fx += (dx / d) * pull * dt - (dy / d) * S.fin * 45 * dt;
+                o.fy += (dy / d) * pull * dt + (dx / d) * S.fin * 45 * dt;
+                if (P.on) {
+                    const mx = sx - P.x, my = sy - P.y, md = Math.hypot(mx, my) || 1;
+                    if (md < 160) { o.fx += (mx / md) * (1 - md / 160) * 400 * dt; o.fy += (my / md) * (1 - md / 160) * 400 * dt; }
+                }
+            }
+            if (pulse) {   // shockwave when "I am sorry!" ignites
+                const ax = sx - S.fcx, ay = sy - S.fcy, ad = Math.hypot(ax, ay) || 1;
+                o.fx += (ax / ad) * (160 + L.par * 220); o.fy += (ay / ad) * (160 + L.par * 220);
+            }
+
+            const pr = Math.exp(-Math.pow(d / 260, 2)) * (S.lit * 0.8 + S.fin);
+            const tw = L.tw ? 0.65 + 0.35 * Math.sin(t * o.f * 1.5 + o.p) : 1;
+            const size = o.r * L.sz * (1 + 0.25 * pr);
+            g.globalAlpha = clamp(o.a * (1 + 2 * pr) * tw * (1 + S.fin * 0.5)) * fade;
+            g.drawImage(o.s[L.k], sx - size / 2, sy - size / 2, size, size);
+        });
+        pulse = false;
+
+        // dust forming the final words
+        if (S.fin > 0.02 && targets.length) {
+            dust.forEach(q => {
+                const T = targets[q.i % targets.length];
+                const form = ease(clamp((S.fin - 0.25 - (q.i / dust.length) * 0.3) / 0.45));
+                const a = q.ang + t * q.w;
+                const fxp = S.fcx + Math.cos(a) * q.rad * 1.5, fyp = S.fcy + Math.sin(a) * q.rad * 0.6;
+                const x = fxp + (S.fcx + T[0] - fxp) * form + Math.sin(t * 3 + q.p) * 2 * form;
+                const y = fyp + (S.fcy + T[1] - fyp) * form + Math.cos(t * 2.6 + q.p) * 2 * form;
+                const size = q.r * 8 * (1 + form * 0.4);
+                g.globalAlpha = (0.2 + 0.7 * form) * (0.6 + 0.4 * Math.sin(t * 1.6 + q.p)) * Math.min(1, S.fin * 2);
+                g.drawImage(q.s.glow, x - size / 2, y - size / 2, size, size);
+            });
+        }
+
+        // one slow, quiet ripple when the last line appears
+        if (ringT && !reduce) {
+            const k = (now - ringT) / 5000;
+            if (k < 1) {
+                g.globalAlpha = Math.pow(1 - k, 2) * 0.35;
+                g.strokeStyle = "rgb(170,190,225)"; g.lineWidth = 1.5 + (1 - k) * 4;
+                g.beginPath(); g.arc(S.fcx, S.fcy, k * Math.max(W, H) * 0.8, 0, 6.283); g.stroke();
+            }
+        }
+        g.globalAlpha = 1;
+        requestAnimationFrame(drawFx);
+    }
+    requestAnimationFrame(drawFx);
+})();
+</script>
+</body>
+</html>

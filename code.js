@@ -67,47 +67,45 @@ function createSeparator() {
     return separator;
 }
 
-function getCountdown() {
+/**
+ * Target Time Calculation: 10:00 PM GMT (22:00 UTC)
+ */
+function getTargetTime() {
     const now = new Date();
-
-    let halloween = new Date(
-        now.getFullYear(),
+    
+    // Set target to today at 22:00 UTC (10:00 PM GMT)
+    let target = new Date(Date.UTC(
+        2026,
         9,
         31,
-        0,
-        0,
-        0
-    );
+        22, 0, 0
+    ));
 
-    if (now >= halloween) {
-        halloween = new Date(
-            now.getFullYear() + 1,
-            9,
-            31,
-            0,
-            0,
-            0
-        );
+    // If that time has already passed today, target tomorrow
+    if (now >= target) {
+        target.setUTCDate(target.getUTCDate() + 1);
     }
 
-    const difference = halloween - now;
+    return target;
+}
+
+const targetTime = getTargetTime();
+
+function getCountdown() {
+    const now = new Date();
+    const difference = targetTime - now;
+
+    if (difference <= 0) {
+        // Automatically redirect to theend.html when countdown reaches zero
+        window.location.href = "theend.html";
+        return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+    }
 
     return {
-        days: Math.floor(
-            difference / (1000 * 60 * 60 * 24)
-        ),
-
-        hours: Math.floor(
-            (difference / (1000 * 60 * 60)) % 24
-        ),
-
-        minutes: Math.floor(
-            (difference / (1000 * 60)) % 60
-        ),
-
-        seconds: Math.floor(
-            (difference / 1000) % 60
-        )
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / (1000 * 60)) % 60),
+        seconds: Math.floor((difference / 1000) % 60)
     };
 }
 
@@ -188,10 +186,7 @@ function updateCountdown() {
         const value = values[groupIndex];
 
         digits.forEach((digit, digitIndex) => {
-            updateDigit(
-                digit,
-                value[digitIndex]
-            );
+            updateDigit(digit, value[digitIndex]);
         });
     });
 }

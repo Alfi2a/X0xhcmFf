@@ -1,336 +1,271 @@
 @font-face {
-font-family: "Minecraft";
-src: url("Minecraft.ttf") format("truetype");
+  font-family: "Minecraft";
+  src: url("Minecraft.ttf") format("truetype");
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 html,
 body {
-margin: 0;
-width: 100%;
-height: 100%;
-overflow: hidden;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: #080604;
+  color: white;
+  font-family: "Minecraft", monospace;
+  overflow-x: hidden;
 }
 
 body {
-background: #080604;
-color: white;
-font-family: "Minecraft", monospace;
-display: flex;
-align-items: center;
-justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* =========================
-WRAPPER (Centers everything together)
-========================= */
+   GLOWING AMBIENT LIGHTS & STARS
+   ========================= */
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  width: 450px;
+  height: 450px;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: -2;
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+/* Cyan Light */
+body::before {
+  top: 10%;
+  left: 15%;
+  background: rgba(0, 243, 255, 0.5);
+}
+
+/* Purple Light */
+body::after {
+  bottom: 10%;
+  right: 15%;
+  background: rgba(162, 0, 255, 0.45);
+}
+
+/* Subtle Stars */
+.stars {
+  position: fixed;
+  inset: 0;
+  background-image: 
+    radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 150px 180px, rgba(0, 243, 255, 0.8), rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 300px 100px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 500px 350px, rgba(162, 0, 255, 0.8), rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 700px 200px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 900px 450px, #ffffff, rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 650px 650px;
+  opacity: 0.25;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* =========================
+   WRAPPER (Centers everything together)
+   ========================= */
 
 .wrapper {
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-gap: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 50px;
 }
 
 /* =========================
-PUMPKIN CUBE
-========================= */
+   PUMPKIN CUBE
+   ========================= */
 
 .scene {
-width: 260px;
-height: 260px;
-perspective: 900px;
-display: flex;
-align-items: center;
-justify-content: center;
+  width: 260px;
+  height: 260px;
+  perspective: 900px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cube {
-width: 260px;
-height: 260px;
-transform-style: preserve-3d;
-position: relative;
+  width: 260px;
+  height: 260px;
+  transform-style: preserve-3d;
+  position: relative;
 }
 
 .face {
-position: absolute;
-width: 260px;
-height: 260px;
-overflow: hidden;
-backface-visibility: hidden;
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  overflow: hidden;
+  backface-visibility: hidden;
 }
 
 .face img {
-width: 100%;
-height: 100%;
-display: block;
-image-rendering: pixelated;
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
 }
 
-/* Cube faces */
-
-.front {
-transform: translateZ(130px);
-}
-
-.back {
-transform: rotateY(180deg) translateZ(130px);
-}
-
-.right {
-transform: rotateY(90deg) translateZ(130px);
-}
-
-.left {
-transform: rotateY(-90deg) translateZ(130px);
-}
-
-.top {
-transform: rotateX(90deg) translateZ(130px);
-}
-
-.bottom {
-transform: rotateX(-90deg) translateZ(130px);
-}
-
-/* Pumpkin glow */
+.front { transform: translateZ(130px); }
+.back { transform: rotateY(180deg) translateZ(130px); }
+.right { transform: rotateY(90deg) translateZ(130px); }
+.left { transform: rotateY(-90deg) translateZ(130px); }
+.top { transform: rotateX(90deg) translateZ(130px); }
+.bottom { transform: rotateX(-90deg) translateZ(130px); }
 
 .glow-overlay {
-position: absolute;
-inset: 0;
-width: 100%;
-height: 100%;
-opacity: 0;
-pointer-events: none;
-mix-blend-mode: screen;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
 }
 
 .front.glowing .glow-overlay {
-animation: pumpkinGlow 0.9s ease-out;
+  animation: pumpkinGlow 0.9s ease-out;
 }
 
 @keyframes pumpkinGlow {
-0% {
-opacity: 0;
-filter:
-drop-shadow(0 0 0px #ff6500)
-drop-shadow(0 0 0px #ff9d00);
-}
-
-25% {
-    opacity: 1;
-    filter:
-        drop-shadow(0 0 18px #ff6500)
-        drop-shadow(0 0 35px #ff9d00);
-}
-
-100% {
+  0% {
     opacity: 0;
-    filter:
-        drop-shadow(0 0 5px #ff6500)
-        drop-shadow(0 0 10px #ff9d00);
-}
+    filter: drop-shadow(0 0 0px #ff6500) drop-shadow(0 0 0px #ff9d00);
+  }
+  25% {
+    opacity: 1;
+    filter: drop-shadow(0 0 18px #ff6500) drop-shadow(0 0 35px #ff9d00);
+  }
+  100% {
+    opacity: 0;
+    filter: drop-shadow(0 0 5px #ff6500) drop-shadow(0 0 10px #ff9d00);
+  }
 }
 
 /* =========================
-COUNTDOWN
-========================= */
+   COUNTDOWN
+   ========================= */
 
 #countdown {
-position: relative;
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 14px;
-font-family: "Minecraft", monospace;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  font-family: "Minecraft", monospace;
 }
-
-/* Each number group */
 
 .number-group {
-display: flex;
-flex-direction: row;
-align-items: center;
-gap: 4px;
-position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  position: relative;
 }
-
-/* Individual square digit */
 
 .digit {
-position: relative;
-
-width: 45px;
-height: 55px;
-
-overflow: hidden;
-
-display: flex;
-align-items: center;
-justify-content: center;
-
-background: #15100d;
-
-border: 3px solid #6b2808;
-border-radius: 2px;
-
-color: #ffffff;
-font-family: "Minecraft", monospace;
-font-size: 36px;
-
-box-shadow:
-    inset 0 0 0 1px #301106,
-    0 4px 0 #090604,
-    0 7px 12px rgba(0, 0, 0, 0.65);
-
-transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+  position: relative;
+  width: 45px;
+  height: 55px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #15100d;
+  border: 3px solid #6b2808;
+  border-radius: 2px;
+  color: #ffffff;
+  font-family: "Minecraft", monospace;
+  font-size: 36px;
+  box-shadow: inset 0 0 0 1px #301106, 0 4px 0 #090604, 0 7px 12px rgba(0, 0, 0, 0.65);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-
-/* Make the animated numbers fill the square */
 
 .digit-value {
-position: absolute;
-inset: 0;
-
-display: flex;
-align-items: center;
-justify-content: center;
-
-font-family: "Minecraft", monospace;
-font-size: 36px;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Minecraft", monospace;
+  font-size: 36px;
 }
 
-/* New number comes from above */
+.new-value { transform: translateY(-100%); }
+.old-value { transform: translateY(0); }
 
-.new-value {
-transform: translateY(-100%);
-}
-
-/* Old number starts in the normal position */
-
-.old-value {
-transform: translateY(0);
-}
-
-/* Animate only changed digits */
-
-.digit.changing .new-value {
-animation: digitIn 0.45s ease-out forwards;
-}
-
-.digit.changing .old-value {
-animation: digitOut 0.45s ease-out forwards;
-}
+.digit.changing .new-value { animation: digitIn 0.45s ease-out forwards; }
+.digit.changing .old-value { animation: digitOut 0.45s ease-out forwards; }
 
 @keyframes digitIn {
-from {
-transform: translateY(-100%);
-}
-
-to {
-    transform: translateY(0);
-}
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
 }
 
 @keyframes digitOut {
-from {
-transform: translateY(0);
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
 }
-
-to {
-    transform: translateY(100%);
-}
-}
-
-/* =========================
-CLICK GLOW
-========================= */
 
 #countdown.glowing .digit {
-animation: orangeOutlineGlow 0.9s ease-out;
+  animation: orangeOutlineGlow 0.9s ease-out;
 }
 
 @keyframes orangeOutlineGlow {
-0% {
-border-color: #6b2808;
-
-    box-shadow:
-        inset 0 0 0 1px #301106,
-        0 4px 0 #090604,
-        0 7px 12px rgba(0, 0, 0, 0.65);
-}
-
-25% {
-    border-color: #ff7a00;
-
-    box-shadow:
-        inset 0 0 10px rgba(255, 100, 0, 0.2),
-        0 0 8px #ff6500,
-        0 0 20px #ff6500,
-        0 0 35px rgba(255, 140, 0, 0.8),
-        0 7px 16px rgba(0, 0, 0, 0.65);
-}
-
-55% {
-    border-color: #ff9a00;
-
-    box-shadow:
-        inset 0 0 12px rgba(255, 120, 0, 0.25),
-        0 0 10px #ff6500,
-        0 0 25px #ff6500,
-        0 0 45px rgba(255, 140, 0, 0.7),
-        0 7px 16px rgba(0, 0, 0, 0.65);
-}
-
-100% {
+  0% {
     border-color: #6b2808;
-
-    box-shadow:
-        inset 0 0 0 1px #301106,
-        0 4px 0 #090604,
-        0 7px 12px rgba(0, 0, 0, 0.65);
+    box-shadow: inset 0 0 0 1px #301106, 0 4px 0 #090604, 0 7px 12px rgba(0, 0, 0, 0.65);
+  }
+  25% {
+    border-color: #ff7a00;
+    box-shadow: inset 0 0 10px rgba(255, 100, 0, 0.2), 0 0 8px #ff6500, 0 0 20px #ff6500, 0 0 35px rgba(255, 140, 0, 0.8), 0 7px 16px rgba(0, 0, 0, 0.65);
+  }
+  100% {
+    border-color: #6b2808;
+    box-shadow: inset 0 0 0 1px #301106, 0 4px 0 #090604, 0 7px 12px rgba(0, 0, 0, 0.65);
+  }
 }
-}
-
-/* Labels */
 
 .unit-label {
-position: absolute;
-bottom: -22px;
-left: 50%;
-transform: translateX(-50%);
-
-color: #777;
-font-family: "Minecraft", monospace;
-font-size: 11px;
-letter-spacing: 1px;
-white-space: nowrap;
+  position: absolute;
+  bottom: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #777;
+  font-family: "Minecraft", monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  white-space: nowrap;
 }
-
-/* Separators */
 
 .separator {
-height: 68px;
-
-display: flex;
-align-items: center;
-justify-content: center;
-padding-bottom: 4px;
-
-color: #777;
-font-family: "Minecraft", monospace;
-font-size: 30px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 4px;
+  color: #777;
+  font-family: "Minecraft", monospace;
+  font-size: 30px;
 }
-
-/* =========================
-FOOTER CREDIT
-========================= */
 
 .footer-credit {
   color: #777;
@@ -342,11 +277,91 @@ FOOTER CREDIT
 }
 
 /* =========================
-MOBILE
-========================= */
+   THE END PAGE — ROLLING CREDITS
+   ========================= */
 
-@media (max-width: 700px) {
-.wrapper {
-transform: scale(0.75);
+html:has(.end-page) {
+  background: radial-gradient(ellipse 90% 60% at 50% 115%, #121826 0, #04060a 70%) fixed #04060a;
+  overflow: hidden;
 }
+.end-page {
+  display: block;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;            /* no manual scrolling: the credits roll on their own */
+  touch-action: none;
+  overscroll-behavior: none;
 }
+.end-page::before,
+.end-page::after { display: none; }
+.end-page .stars { animation: twinkle 5s ease-in-out infinite alternate; }
+.end-page .stars { filter: grayscale(0.7); }
+@keyframes twinkle { from { opacity: 0.12; } to { opacity: 0.4; } }
+
+/* soft, tired spotlight that follows the line being read */
+.halo {
+  position: fixed; top: 50%; left: 50%;
+  width: min(110vmin, 900px); aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(190,208,235,0.5) 0, rgba(120,145,190,0.16) 38%, rgba(90,115,170,0) 68%);
+  filter: blur(14px);
+  transform: translate(calc(-50% + var(--lx, 0) * 1px), calc(-50% + var(--ly, 0) * 1px)) scale(calc(0.85 + var(--fin, 0) * 0.6));
+  opacity: calc((var(--lit, 0) * 0.26 + var(--fin, 0) * 0.28) * var(--br, 1));
+  pointer-events: none; z-index: 0;
+}
+
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+
+/* cinematic finish: vignette + film grain */
+.vig {
+  position: fixed; inset: 0; z-index: 3; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 42%, rgba(0,3,10,0.88) 100%);
+}
+.grain {
+  position: fixed; inset: -50%; z-index: 4; pointer-events: none; opacity: 0.07;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  animation: grain 0.9s steps(6) infinite;
+}
+@keyframes grain {
+  0% { transform: translate(0, 0); } 20% { transform: translate(-4%, 3%); }
+  40% { transform: translate(3%, -5%); } 60% { transform: translate(-5%, -2%); }
+  80% { transform: translate(4%, 4%); } 100% { transform: translate(0, 0); }
+}
+
+/* credits (moved with transform by the script) */
+.credits {
+  position: fixed; top: 0; left: 0; width: 100%;
+  z-index: 2;
+  padding: 100vh 0 50vh;
+  opacity: 0;
+  will-change: transform;
+}
+.line {
+  width: min(460px, 84vw);
+  margin-bottom: 26vh;
+  font-size: clamp(18px, 2.4vw, 26px);
+  line-height: 1.8;
+  will-change: transform;
+}
+.line.left   { margin-left: 8vw;  margin-right: auto; text-align: left; }
+.line.right  { margin-right: 8vw; margin-left: auto;  text-align: right; }
+.line.center { margin-left: auto; margin-right: auto; text-align: center; }
+.line.title  { width: min(900px, 90vw); font-size: clamp(26px, 4.4vw, 52px); letter-spacing: 0.12em; }
+.line.final  { width: min(900px, 92vw); margin-bottom: 0; font-size: clamp(44px, 9vw, 96px); line-height: 1.15; }
+.line.final h1 { margin: 0; font: inherit; }
+
+/* each word (or letter) lights up on its own; colour fringes while it blurs in */
+.wd { display: inline-block; white-space: nowrap; }
+.u {
+  display: inline-block;
+  opacity: var(--u, 0);
+  transform: translateY(calc(var(--y, 16) * 1px));
+  color: rgb(calc(140 + 100 * var(--g, 0)) calc(155 + 90 * var(--g, 0)) calc(185 + 65 * var(--g, 0)));
+  text-shadow:
+    calc(var(--y, 16) * -0.25px) 0 rgba(110, 160, 255, calc(var(--y, 16) * 0.015)),
+    calc(var(--y, 16) * 0.25px) 0 rgba(70, 90, 170, calc(var(--y, 16) * 0.015)),
+    0 0 calc(4px + 20px * var(--g, 0)) rgba(200, 220, 255, calc(0.06 + 0.6 * var(--g, 0))),
+    0 0 calc(20px + 44px * var(--g, 0)) rgba(130, 160, 220, calc(0.45 * var(--g, 0)));
+  will-change: opacity, transform;
+}
+@media (prefers-reduced-motion: reduce) { .grain, .end-page .stars { animation: none; } }
