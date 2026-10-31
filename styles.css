@@ -94,8 +94,8 @@ body::after {
    ========================= */
 
 .scene {
-  width: 260px;
-  height: 260px;
+  width: var(--s);
+  height: var(--s);
   perspective: 900px;
   display: flex;
   align-items: center;
@@ -103,16 +103,16 @@ body::after {
 }
 
 .cube {
-  width: 260px;
-  height: 260px;
+  width: var(--s);
+  height: var(--s);
   transform-style: preserve-3d;
   position: relative;
 }
 
 .face {
   position: absolute;
-  width: 260px;
-  height: 260px;
+  width: var(--s);
+  height: var(--s);
   overflow: hidden;
   backface-visibility: hidden;
 }
@@ -124,12 +124,6 @@ body::after {
   image-rendering: pixelated;
 }
 
-.front { transform: translateZ(130px); }
-.back { transform: rotateY(180deg) translateZ(130px); }
-.right { transform: rotateY(90deg) translateZ(130px); }
-.left { transform: rotateY(-90deg) translateZ(130px); }
-.top { transform: rotateX(90deg) translateZ(130px); }
-.bottom { transform: rotateX(-90deg) translateZ(130px); }
 
 .glow-overlay {
   position: absolute;
@@ -365,3 +359,243 @@ html:has(.end-page) {
   will-change: opacity, transform;
 }
 @media (prefers-reduced-motion: reduce) { .grain, .end-page .stars { animation: none; } }
+
+/* =========================
+   INDEX: BACKGROUND, LOGO, RESPONSIVE CUBE
+   ========================= */
+
+/* dirt tile (on html so the ambient lights still paint above it) */
+html {
+  background:
+    radial-gradient(ellipse at center, rgba(8, 6, 4, 0.55) 0, rgba(8, 6, 4, 0.95) 100%),
+    url("Textures/Background.png") 0 0 / 160px 160px #080604;
+  image-rendering: pixelated;
+}
+body { background: none; }
+
+.wrapper { gap: clamp(26px, 5vh, 50px); padding: 24px 0; }
+
+.title-logo {
+  width: min(560px, 86vw);
+  height: auto;
+  image-rendering: auto;
+  filter: drop-shadow(0 0 22px rgba(255, 40, 0, 0.4)) drop-shadow(0 6px 0 rgba(0, 0, 0, 0.6));
+  animation: logoFloat 5s ease-in-out infinite;
+}
+@keyframes logoFloat { 50% { transform: translateY(-6px); } }
+
+.scene { --s: clamp(150px, 30vh, 260px); }
+
+.face { transform: var(--base); }
+.front  { --base: translateZ(calc(var(--s) / 2));                  --spin: 25deg; }
+.back   { --base: rotateY(180deg) translateZ(calc(var(--s) / 2));  --spin: -35deg; }
+.right  { --base: rotateY(90deg) translateZ(calc(var(--s) / 2));   --spin: 40deg; }
+.left   { --base: rotateY(-90deg) translateZ(calc(var(--s) / 2));  --spin: -20deg; }
+.top    { --base: rotateX(90deg) translateZ(calc(var(--s) / 2));   --spin: 30deg; }
+.bottom { --base: rotateX(-90deg) translateZ(calc(var(--s) / 2));  --spin: -45deg; }
+
+@media (max-width: 560px) {
+  #countdown { gap: 6px; }
+  .number-group { gap: 2px; }
+  .digit { width: 30px; height: 40px; font-size: 24px; border-width: 2px; }
+  .digit-value { font-size: 24px; }
+  .separator { height: 50px; font-size: 22px; }
+  .unit-label { font-size: 8px; bottom: -18px; }
+}
+
+/* =========================
+   ENDING SEQUENCE (index -> theend)
+   ========================= */
+
+.fade-layer { position: fixed; inset: 0; z-index: 10; pointer-events: none; opacity: 0; }
+#flash { background: radial-gradient(circle, #fff 0, #fff 10%, #ffd37a 26%, #ff7a00 46%, rgba(255, 90, 0, 0) 72%); }
+#veil {
+  background: radial-gradient(circle at 50% 50%, rgba(175, 196, 232, 0.38) 0, #04060a 58%);
+  transition: opacity 1.9s ease-in-out;
+}
+
+/* 1. rumble + ignite */
+.scene { scale: 1; transition: scale 1.8s ease-in; }
+.ending .scene { scale: 1.18; animation: shake 0.08s linear infinite; }
+@keyframes shake {
+  0%   { translate: 2px 0; }
+  25%  { translate: -3px 2px; }
+  50%  { translate: 1px -3px; }
+  75%  { translate: -2px 1px; }
+  100% { translate: 3px -1px; }
+}
+.ending .glow-overlay {
+  animation: ember 0.45s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 24px #ff6500) drop-shadow(0 0 48px #ff9d00);
+}
+@keyframes ember { from { opacity: 0.35; } to { opacity: 1; } }
+.ending .digit { animation: orangeOutlineGlow 0.7s ease-out infinite; }
+
+/* 2. burst: light flash, cube flies apart, interface dissolves */
+.burst #flash { animation: flash 1.6s ease-out forwards; }
+@keyframes flash {
+  0%   { opacity: 0; transform: scale(0.15); }
+  18%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(2.6); }
+}
+.burst .face { animation: fly 1.3s cubic-bezier(0.2, 0.7, 0.3, 1) forwards; }
+@keyframes fly {
+  to { transform: var(--base) translateZ(700px) rotate(calc(var(--spin) * 3)); opacity: 0; }
+}
+.title-logo, #countdown, .footer-credit { transition: opacity 0.9s ease, filter 0.9s ease; }
+.burst .title-logo, .burst #countdown, .burst .footer-credit { opacity: 0; filter: blur(8px); }
+
+/* 3. settle into the cold light of theend.html */
+.fade #veil { opacity: 1; }
+.fade .title-logo, .fade #countdown, .fade .footer-credit { opacity: 0; }
+
+/* theend.html: arrive out of the dark instead of a hard cut */
+.end-page { animation: arrive 1.6s ease-out both; }
+@keyframes arrive { from { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .title-logo, .ending .scene, .ending .digit, .ending .glow-overlay, .burst .face { animation: none; }
+}
+
+
+/* =========================
+   THE END: LONGER LETTER + SAD-BUT-EPIC LIGHT
+   ========================= */
+
+.line { width: min(620px, 86vw); font-size: clamp(16px, 2.1vw, 24px); margin-bottom: 16vh; }
+.line.big { width: min(900px, 90vw); font-size: clamp(26px, 4.2vw, 50px); letter-spacing: 0.06em; }
+.line.final { font-size: clamp(30px, 7vw, 80px); }
+
+/* soft god-rays that fall from above and swell with the finale */
+.rays {
+  position: fixed; top: -10vmax; left: 50%; width: 150vmax; height: 150vmax; margin-left: -75vmax;
+  z-index: 0; pointer-events: none; transform-origin: 50% 0; filter: blur(10px);
+  background: conic-gradient(from 168deg at 50% 0, transparent 0, rgba(175,200,240,.5) 3deg, transparent 8deg, transparent 14deg,
+    rgba(175,200,240,.3) 17deg, transparent 22deg, transparent 26deg, rgba(175,200,240,.42) 29deg, transparent 35deg, transparent 360deg);
+  -webkit-mask-image: linear-gradient(#000, transparent 65%); mask-image: linear-gradient(#000, transparent 65%);
+  opacity: calc(var(--fin, 0) * 0.6 + var(--lit, 0) * 0.06);
+  animation: raysway 9s ease-in-out infinite alternate;
+}
+@keyframes raysway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+
+/* cinematic letterbox closes in at the start */
+.bar { position: fixed; left: 0; width: 100%; height: 0; background: #000; z-index: 5; pointer-events: none;
+  animation: bar 3.2s 0.4s cubic-bezier(.2,.7,.2,1) forwards; }
+.bar.t { top: 0; } .bar.b { bottom: 0; }
+@keyframes bar { to { height: 7vh; } }
+
+/* impact when "I really am sorry." ignites */
+.flash { position: fixed; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle, rgba(220,235,255,.9), rgba(120,150,210,.25) 55%, transparent 80%); }
+.impact .flash { animation: boom 2s ease-out; }
+@keyframes boom { 0% { opacity: 0; } 8% { opacity: .85; } 100% { opacity: 0; } }
+.impact #fx { animation: quake 1.1s ease-out; }
+@keyframes quake {
+  0% { transform: none; } 10% { transform: translate(-9px, 6px); } 20% { transform: translate(8px, -7px); }
+  30% { transform: translate(-6px, -4px); } 45% { transform: translate(4px, 5px); } 65% { transform: translate(-2px, -2px); } 100% { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rays, .impact .flash, .impact #fx { animation: none; }
+  .bar { animation: none; height: 7vh; }
+}
+
+
+/* =========================
+   ENDING, MORE EPIC
+   ========================= */
+
+/* 2. the room catches fire */
+body::before, body::after { transition: opacity 1.5s ease, transform 1.5s ease, background 1.5s ease; }
+.ending2::before, .ending2::after { background: rgba(255, 110, 0, 0.6); opacity: 0.7; transform: scale(1.7); }
+.ending2 .scene { scale: 1.32; animation: shake 0.05s linear infinite; }
+.ending2 .glow-overlay { animation-duration: 0.2s; }
+
+/* 3. shockwaves and a slam that shakes the whole page */
+.ring {
+  inset: auto; top: 50%; left: 50%; width: 20vmin; height: 20vmin; margin: -10vmin 0 0 -10vmin;
+  border: 3px solid rgba(255, 200, 130, 0.9); border-radius: 50%;
+  box-shadow: 0 0 30px rgba(255, 120, 0, 0.8), inset 0 0 30px rgba(255, 120, 0, 0.5);
+}
+.burst .ring { animation: ring 1.9s var(--d) cubic-bezier(0.1, 0.6, 0.3, 1) both; }
+@keyframes ring { 0% { opacity: 0.9; transform: scale(0.3); } 100% { opacity: 0; transform: scale(9); } }
+.burst .wrapper { animation: slam 1s ease-out; }
+@keyframes slam {
+  0% { transform: none; } 8% { transform: translate(-14px, 10px); } 18% { transform: translate(12px, -10px); }
+  30% { transform: translate(-8px, -6px); } 45% { transform: translate(5px, 6px); } 70% { transform: translate(-2px, -2px); } 100% { transform: none; }
+}
+/* the orange light leaves with the pumpkin */
+.burst::before, .burst::after { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ending2 .scene, .burst .wrapper, .burst .ring { animation: none; }
+}
+
+/* =========================
+   EPIC BUT DEPRESSIVE
+   dead steel-blue light, dried blood, one dying ember
+   ========================= */
+
+html {
+  background:
+    radial-gradient(ellipse at 50% 55%, rgba(14, 4, 2, 0.62) 0, rgba(2, 0, 0, 0.985) 100%),
+    url("Textures/Background.png") 0 0 / 160px 160px #030101;
+}
+body::before { background: rgba(60, 82, 125, 0.5); opacity: 0.28; }
+body::after  { background: rgba(130, 6, 0, 0.5);  opacity: 0.3; }
+
+/* weight: crushing vignette + grain over the whole countdown page */
+body:not(.end-page) .vig { background: radial-gradient(ellipse at 50% 50%, transparent 24%, rgba(8, 0, 0, 0.93) 100%); }
+body:not(.end-page) .grain { opacity: 0.1; }
+
+/* the logo: cold blood-red glow, and it sometimes fails */
+.title-logo {
+  filter: drop-shadow(0 0 30px rgba(190, 0, 0, 0.55)) drop-shadow(0 8px 0 #000);
+  animation: logoFloat 6s ease-in-out infinite, logoFail 9s linear infinite;
+}
+@keyframes logoFail { 0%, 90%, 94%, 100% { opacity: 1; } 91% { opacity: 0.25; } 92% { opacity: 0.9; } 93% { opacity: 0.1; } }
+.burst .title-logo, .fade .title-logo { animation: none; }
+
+/* the pumpkin: unlit and heavy, a faint ember breathing inside, a red stain beneath */
+.face img:not(.glow-overlay) { filter: brightness(0.55) saturate(0.7) contrast(1.15); }
+.glow-overlay { animation: smolder 4.5s ease-in-out infinite; }
+@keyframes smolder { 0%, 100% { opacity: 0.03; } 45% { opacity: 0.3; } 55% { opacity: 0.2; } }
+.scene { position: relative; }
+.scene::after {
+  content: ""; position: absolute; left: 50%; bottom: -8%; width: 150%; height: 24%; z-index: -1;
+  transform: translateX(-50%); filter: blur(14px); pointer-events: none;
+  background: radial-gradient(ellipse, rgba(170, 14, 0, 0.55), transparent 70%);
+  animation: stain 4.5s ease-in-out infinite;
+}
+@keyframes stain { 50% { opacity: 0.45; transform: translateX(-50%) scale(0.88); } }
+.burst .scene::after { animation: none; opacity: 0; transition: opacity 0.3s; }
+
+/* the clock: ash-grey numbers on dried blood, a separator that blinks like a dying monitor */
+.digit {
+  background: #0b0606; border-color: #4a1410; color: #cfc6c6;
+  text-shadow: 0 0 10px rgba(200, 20, 10, 0.5);
+  box-shadow: inset 0 0 0 1px #1c0605, inset 0 -12px 16px rgba(120, 0, 0, 0.2), 0 4px 0 #050202, 0 8px 18px rgba(0, 0, 0, 0.85);
+}
+@keyframes orangeOutlineGlow {
+  0%, 100% { border-color: #4a1410; box-shadow: inset 0 0 0 1px #1c0605, inset 0 -12px 16px rgba(120, 0, 0, 0.2), 0 4px 0 #050202, 0 8px 18px rgba(0, 0, 0, 0.85); }
+  25% { border-color: #ff4a1a; box-shadow: inset 0 0 12px rgba(255, 60, 0, 0.3), 0 0 10px #d82800, 0 0 28px #b01800, 0 0 50px rgba(255, 70, 0, 0.55), 0 8px 18px rgba(0, 0, 0, 0.85); }
+}
+.unit-label { color: #5b4a4a; letter-spacing: 3px; }
+.separator { color: #7a1a14; animation: dying 2s steps(1) infinite; }
+@keyframes dying { 50% { opacity: 0.2; } }
+.footer-credit { color: #3e3434; letter-spacing: 5px; }
+
+/* the final minute: the walls close in and the room starts to pulse */
+.dread .vig { animation: throb 1.3s ease-in-out infinite; }
+@keyframes throb { 50% { box-shadow: inset 0 0 20vmin rgba(160, 0, 0, 0.6); } }
+.dread .digit { color: #ff4a36; text-shadow: 0 0 14px rgba(255, 40, 20, 0.85); }
+.ending2 .vig { background: radial-gradient(ellipse at 50% 50%, transparent 14%, rgba(100, 0, 0, 0.96) 100%); transition: background 1.5s; }
+
+/* the end page: deeper letterbox, colder dark, heavier grain */
+@keyframes bar { to { height: 11vh; } }
+.end-page .vig { background: radial-gradient(ellipse at center, transparent 28%, rgba(0, 2, 8, 0.96) 100%); }
+.end-page .grain { opacity: 0.1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .title-logo, .glow-overlay, .scene::after, .separator, .dread .vig { animation: none; }
+  .glow-overlay { opacity: 0.12; }
+}

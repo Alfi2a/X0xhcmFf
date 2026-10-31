@@ -10,32 +10,51 @@
 
     <div class="stars" aria-hidden="true"></div>
     <div class="halo" aria-hidden="true"></div>
+    <div class="rays" aria-hidden="true"></div>
     <canvas id="fx" aria-hidden="true"></canvas>
 
     <main class="credits" id="credits">
         <div class="line title chars center">I wanted to say some (final) words</div>
 
-        <div class="line left">I know I was awful after it all ended.</div>
-        <div class="line right">I guess I couldn't let go that easily.</div>
-        <div class="line left">I know I was stupid.</div>
-        <div class="line right">I poured all of my energy into making you hate me.</div>
-        <div class="line left">Mainly so you could forget me easily.</div>
-        <div class="line right">But in the end, it only made things worse.</div>
-        <div class="line left">So I apologize for that.</div>
-        <div class="line right">It was still fun for me, though.</div>
-        <div class="line left">I don't know if you feel the same.</div>
-        <div class="line center">But after all &mdash;</div>
+        <div class="line left">I know I wasn't the best version of myself after everything ended.</div>
+        <div class="line right">I guess I just couldn't bring myself to let go as easily as I wanted to, or perhaps as easily as I should have.</div>
+        <div class="line left">I didn't really know how to deal with everything I was feeling, and instead of handling it properly, I ended up doing things I probably shouldn't have.</div>
+        <div class="line right">I know I was stupid.</div>
+        <div class="line left">I spent so much of my energy trying to make you hate me, almost as if making myself someone you wouldn't want to remember would somehow make it easier for you to move on.</div>
+        <div class="line right">I thought that if I gave you enough reasons to dislike me, forgetting me wouldn't be so difficult.</div>
+        <div class="line left">Maybe, in some strange way, I thought I was making things easier for both of us.</div>
+        <div class="line right">But looking back, I realize that all I did was make things more complicated than they needed to be.</div>
+        <div class="line left">I let my emotions get the better of me, and I'm genuinely sorry if my actions hurt you, confused you, or left you with a bad impression of me.</div>
+        <div class="line right">That was never how I wanted things to end, even if my actions suggested otherwise.</div>
+        <div class="line center">Despite everything, I want you to know that I did enjoy the time we spent together.</div>
+        <div class="line left">I enjoyed the little moments, the conversations, the memories, and all the things that made that chapter of my life special.</div>
+        <div class="line right">And even though things didn't turn out the way I might have once hoped, I wouldn't say that I regret having experienced any of it.</div>
+        <div class="line left">I don't know how you look back on everything now.</div>
+        <div class="line right">Maybe it meant something to you, maybe it didn't mean as much, or perhaps you remember it completely differently.</div>
+        <div class="line left">I guess I'll never really know, and that's okay.</div>
+        <div class="line right">I just hope that, somewhere in your memories, there are still a few good things worth remembering.</div>
+        <div class="line center">I don't expect anything from you by saying all of this. I don't expect a reply, forgiveness, or even for you to feel the same way.</div>
+        <div class="line left">I simply wanted to acknowledge my mistakes and say the things I probably should have said a long time ago.</div>
+        <div class="line right">So, for the way I acted, for the things I said, and for making an already difficult situation even harder,</div>
+        <div class="line center big">I'm truly sorry.</div>
+        <div class="line left">And despite how everything ended, I'm still glad our paths crossed.</div>
+        <div class="line right">I hope life has been treating you well.</div>
+        <div class="line left">And I genuinely wish you nothing but happiness, wherever life takes you.</div>
+        <div class="line center">After all &mdash;</div>
 
-        <div class="line center chars final"><h1>I am sorry!</h1></div>
+        <div class="line center chars final"><h1>I really am sorry.</h1></div>
     </main>
 
+    <div class="flash" aria-hidden="true"></div>
     <div class="vig" aria-hidden="true"></div>
+    <div class="bar t" aria-hidden="true"></div>
+    <div class="bar b" aria-hidden="true"></div>
     <div class="grain" aria-hidden="true"></div>
 
 <script>
 (() => {
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const SPEED = 44;                       // credits speed (px per second)
+    const SPEED = 58;                       // credits speed (px per second)
     const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
     const ease = v => v * v * (3 - 2 * v);
     const rand = ([a, b]) => a + Math.random() * (b - a);
@@ -123,7 +142,7 @@
         bs.setProperty("--fin", S.fin.toFixed(3));
         bs.setProperty("--lx", (S.tx - vw / 2).toFixed(0));
         bs.setProperty("--ly", (S.ty - vh / 2).toFixed(0));
-        bs.setProperty("--br", (0.88 + 0.12 * Math.sin(now / 2300) + 0.05 * Math.sin(now / 770)).toFixed(3)); // slow, tired breathing
+        bs.setProperty("--br", (0.88 + 0.12 * Math.sin(now / 2300) + 0.05 * Math.sin(now / 770) + S.fin * 0.25 * Math.pow(Math.max(0, Math.sin(now / 480)), 6)).toFixed(3)); // slow, tired breathing
         requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
@@ -191,6 +210,8 @@
         r: 1.2 + Math.random() * 1.2, p: Math.random() * 6.28, s: SPR[(Math.random() * 3) | 0]
     }));
 
+    const rain = Array.from({ length: 110 }, () => ({ x: Math.random() * 1.2, y: Math.random(), l: 14 + Math.random() * 26, v: 260 + Math.random() * 260, a: 0.05 + Math.random() * 0.12 }));
+
     const P = { x: 0, y: 0, on: false, nx: 0, ny: 0 };
     addEventListener("pointermove", e => { P.x = e.clientX; P.y = e.clientY; P.on = true; });
     document.addEventListener("pointerleave", () => { P.on = false; });
@@ -206,6 +227,19 @@
         g.clearRect(0, 0, W, H);
         g.globalCompositeOperation = "lighter";
 
+        // thin, cold rain: it thins out as the last words ignite
+        const rk = fade * (1 - S.fin * 0.75);
+        if (rk > 0.01) {
+            g.lineWidth = 1; g.strokeStyle = "rgb(150,175,215)";
+            rain.forEach(d => {
+                d.y += d.v * dt / H;
+                if (d.y > 1.05) { d.y = -0.05; d.x = Math.random() * 1.2; }
+                const px = d.x * W - d.y * H * 0.18, py = d.y * H;
+                g.globalAlpha = d.a * rk;
+                g.beginPath(); g.moveTo(px, py); g.lineTo(px - d.l * 0.18, py - d.l); g.stroke();
+            });
+        }
+
         // intro: a single seed of light blooms at the center
         if (!reduce && ti < 3.4) {
             const k = ti / 3.4, a = Math.pow(Math.sin(Math.PI * k), 1.5), sz = 80 + ease(k) * Math.max(W, H) * 1.1;
@@ -219,7 +253,7 @@
                 o.fx += Math.cos(a) * m; o.fy += Math.sin(a) * m;
             });
         }
-        if (!fired && S.fin > 0.55) { fired = true; pulse = true; ringT = now; }
+        if (!fired && S.fin > 0.55) { fired = true; pulse = true; ringT = now; document.body.classList.add("impact"); }
 
         P.nx += ((P.on ? P.x / W - 0.5 : 0) - P.nx) * Math.min(1, real * 3);
         P.ny += ((P.on ? P.y / H - 0.5 : 0) - P.ny) * Math.min(1, real * 3);
@@ -273,15 +307,26 @@
             });
         }
 
-        // one slow, quiet ripple when the last line appears
-        if (ringT && !reduce) {
-            const k = (now - ringT) / 5000;
-            if (k < 1) {
+        // anamorphic streak and a pillar of light behind the final words
+        if (S.fin > 0.02) {
+            const beat = 0.75 + 0.25 * Math.pow(Math.max(0, Math.sin(t * 2.2)), 4), w = W * (0.35 + 0.65 * S.fin);
+            g.globalAlpha = Math.min(1, S.fin * 1.3) * 0.55 * beat;
+            g.drawImage(SPR[0].glow, S.fcx - w / 2, S.fcy - 9, w, 18);
+            g.globalAlpha = Math.min(1, S.fin) * 0.8 * beat;
+            g.drawImage(SPR[2].glow, S.fcx - w * 0.2, S.fcy - 3, w * 0.4, 6);
+            g.globalAlpha = S.fin * 0.3 * beat;
+            g.drawImage(SPR[1].glow, S.fcx - 80, -H * 0.2, 160, S.fcy + H * 0.2);
+        }
+
+        // slow, quiet ripples (three, staggered) when the last line appears
+        if (ringT && !reduce) [0, 0.16, 0.32].forEach(dl => {
+            const k = (now - ringT) / 5000 - dl;
+            if (k > 0 && k < 1) {
                 g.globalAlpha = Math.pow(1 - k, 2) * 0.35;
                 g.strokeStyle = "rgb(170,190,225)"; g.lineWidth = 1.5 + (1 - k) * 4;
                 g.beginPath(); g.arc(S.fcx, S.fcy, k * Math.max(W, H) * 0.8, 0, 6.283); g.stroke();
             }
-        }
+        });
         g.globalAlpha = 1;
         requestAnimationFrame(drawFx);
     }
